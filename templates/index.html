@@ -1,29 +1,38 @@
 {% extends "import.html" %} 
 {% block content %}
 
+{% extends "import.html" %}
+{% block content %}
+
 <center>
 <br><h2>Plant Disease Diagnosis</h2><br>
 
-    <form id="upload-file" method="post" enctype="multipart/form-data">
-         <input type="file" name="file" class="btn btn-success" id="imageUpload" accept=".png, .jpg, .jpeg">
-    </form>
+<form id="upload-file" enctype="multipart/form-data">
+    <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg">
+</form>
 
+<br>
+<button id="btn-predict">Predict</button>
 
-    <div class="image-section" style="display:none;">
-         <img id="imagePreview"  class="img-responsive" src="#" style="width:300px;height:300px;"/><br><br>
-         <div>
-            <button type="button" class="btn btn-info btn-lg " id="btn-predict">Predict!</button>
-         </div>
-    </div>
+<h3 id="result"></h3>
 
+</center>
 
+<script>
+document.getElementById("btn-predict").onclick = function () {
+    let fileInput = document.getElementById("imageUpload");
+    let formData = new FormData();
+    formData.append("file", fileInput.files[0]);
 
-    <div class="loader" style="display:none;"></div>
+    fetch("/predict", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        document.getElementById("result").innerText = data;
+    });
+};
+</script>
 
-    <h3 id="result">
-        <span> </span>
-    </h3>
-
-
-</center><br><br>
 {% endblock %}

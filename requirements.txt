@@ -1,0 +1,7 @@
+flask
+tensorflow
+numpy
+scikit-image
+Pillow
+gevent
+werkzeug
