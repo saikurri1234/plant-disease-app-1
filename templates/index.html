@@ -1,47 +1,60 @@
-{% extends "import.html" %}
-{% block content %}
+import os
+import numpy as np
+import tensorflow as tf
+from flask import Flask, request, render_template
+from werkzeug.utils import secure_filename
+from tensorflow.keras.preprocessing import image
 
-<center>
-<br>
-<h2>Plant Disease Diagnosis</h2>
-<br>
+app = Flask(__name__)
 
-<form id="upload-file" enctype="multipart/form-data">
-    <input type="file" id="imageUpload" name="file" accept=".png,.jpg,.jpeg">
-</form>
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-<br>
-<button id="btn-predict">Predict</button>
+model = tf.keras.models.load_model("PlantDNet.h5", compile=False)
+print("Model loaded")
 
-<h3 id="result"></h3>
+def model_predict(img_path):
+    img = image.load_img(img_path, target_size=(64, 64))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = x / 255.0
+    return model.predict(x)
 
-</center>
+@app.route('/')
+def index():
+    return render_template("index.html")
 
-<script>
-document.getElementById("btn-predict").onclick = function () {
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        if 'file' not in request.files:
+            return "No file uploaded"
 
-    let fileInput = document.getElementById("imageUpload");
+        file = request.files['file']
+        filename = secure_filename(file.filename)
 
-    if (!fileInput.files.length) {
-        document.getElementById("result").innerText = "Please upload an image";
-        return;
-    }
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
 
-    let formData = new FormData();
-    formData.append("file", fileInput.files[0]);
+        preds = model_predict(file_path)
 
-    fetch("/predict", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.text())
-    .then(data => {
-        document.getElementById("result").innerText = "Result: " + data;
-    })
-    .catch(err => {
-        document.getElementById("result").innerText = "Error: " + err;
-    });
-};
-</script>
+        classes = [
+            'Pepper__bell___Bacterial_spot', 'Pepper__bell___healthy',
+            'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy',
+            'Tomato_Bacterial_spot', 'Tomato_Early_blight', 'Tomato_Late_blight',
+            'Tomato_Leaf_Mold', 'Tomato_Septoria_leaf_spot',
+            'Tomato_Spider_mites_Two_spotted_spider_mite',
+            'Tomato__Target_Spot', 'Tomato__Tomato_YellowLeaf__Curl_Virus',
+            'Tomato__Tomato_mosaic_virus', 'Tomato_healthy'
+        ]
 
-{% endblock %}
+        result = classes[np.argmax(preds[0])]
+        return f"Prediction: {result}"
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
