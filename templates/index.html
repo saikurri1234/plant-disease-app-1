@@ -1,14 +1,13 @@
-{% extends "import.html" %} 
-{% block content %}
-
 {% extends "import.html" %}
 {% block content %}
 
 <center>
-<br><h2>Plant Disease Diagnosis</h2><br>
+<br>
+<h2>Plant Disease Diagnosis</h2>
+<br>
 
 <form id="upload-file" enctype="multipart/form-data">
-    <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg">
+    <input type="file" id="imageUpload" name="file" accept=".png,.jpg,.jpeg">
 </form>
 
 <br>
@@ -20,7 +19,14 @@
 
 <script>
 document.getElementById("btn-predict").onclick = function () {
+
     let fileInput = document.getElementById("imageUpload");
+
+    if (!fileInput.files.length) {
+        document.getElementById("result").innerText = "Please upload an image";
+        return;
+    }
+
     let formData = new FormData();
     formData.append("file", fileInput.files[0]);
 
@@ -28,9 +34,12 @@ document.getElementById("btn-predict").onclick = function () {
         method: "POST",
         body: formData
     })
-    .then(response => response.text())
+    .then(res => res.text())
     .then(data => {
-        document.getElementById("result").innerText = data;
+        document.getElementById("result").innerText = "Result: " + data;
+    })
+    .catch(err => {
+        document.getElementById("result").innerText = "Error: " + err;
     });
 };
 </script>
