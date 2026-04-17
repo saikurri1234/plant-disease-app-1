@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 model = tf.keras.models.load_model("PlantDNet.h5", compile=False)
 print("Model loaded")
 
-# ✅ Class labels (IMPORTANT)
+# Class labels
 classes = [
     'Pepper__bell___Bacterial_spot',
     'Pepper__bell___healthy',
@@ -74,14 +74,28 @@ disease_info = {
     'Unknown': "❌ Please upload a clear plant leaf image 🌿"
 }
 
+# 🔥 FIXED FUNCTION (THIS WAS MISSING)
+def is_unknown(preds):
+    top1 = np.max(preds[0])
+    top2 = np.sort(preds[0])[-2]
+
+    confidence = top1 * 100
+    margin = top1 - top2
+
+    # Reject only if VERY uncertain
+    if confidence < 40 and margin < 0.10:
+        return True, confidence
+
+    return False, confidence
+
+
 # Prediction function
 def model_predict(img_path):
     img = image.load_img(img_path, target_size=(64, 64))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = x / 255.0
-    preds = model.predict(x)
-    return preds
+    return model.predict(x)
 
 
 @app.route('/')
@@ -114,7 +128,7 @@ def predict():
         pred_index = np.argmax(preds[0])
         predicted_class = classes[pred_index]
 
-        # 🔥 SMART CHECK (FIX)
+        # Smart detection
         unknown, confidence = is_unknown(preds)
 
         if unknown:
@@ -134,6 +148,7 @@ def predict():
 
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
