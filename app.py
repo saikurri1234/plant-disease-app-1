@@ -5,17 +5,27 @@ from flask import Flask, request, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 from tensorflow.keras.preprocessing import image
 
+# 🔥 MobileNetV2 for filtering non-leaf images
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
+
 app = Flask(__name__)
 
 UPLOAD_FOLDER = "uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load model
-model = tf.keras.models.load_model("PlantDNet.h5", compile=False)
-print("Model loaded")
+# -----------------------------
+# LOAD MODELS
+# -----------------------------
+plant_model = tf.keras.models.load_model("PlantDNet.h5", compile=False)
+print("Plant disease model loaded")
 
-# Class labels
+leaf_filter_model = MobileNetV2(weights="imagenet")
+print("Leaf filter model loaded")
+
+# -----------------------------
+# PLANT CLASSES
+# -----------------------------
 classes = [
     'Pepper__bell___Bacterial_spot',
     'Pepper__bell___healthy',
@@ -67,37 +77,39 @@ disease_info = {
     'Tomato Target Spot': "Apply fungicide.",
     'Tomato Yellow Leaf Curl Virus': "Remove infected plants.",
     'Tomato Mosaic Virus': "Avoid contamination.",
-    'Healthy Tomato Leaf': "Your plant is healthy 🌿"
+    'Tomato_healthy': "Your plant is healthy 🌿"
 }
 
 # -----------------------------
-# 🔥 STEP 1: FEATURE CHECK (plant-like detection)
+# 🔥 LEAF FILTER (IMPORTANT FIX)
 # -----------------------------
-def is_plant_like(preds):
-    probs = preds[0]
+def is_leaf_image(img_path):
+    img = image.load_img(img_path, target_size=(224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
 
-    top1 = np.max(probs)
-    top2 = np.sort(probs)[-2]
+    preds = leaf_filter_model.predict(x)
+    decoded = decode_predictions(preds, top=3)[0]
 
-    confidence = top1 * 100
-    margin = top1 - top2
+    plant_words = ["leaf", "plant", "tree", "flower", "vine", "crop"]
 
-    # Strong rule for rejection
-    if confidence < 50 and margin < 0.15:
-        return False, confidence
+    for _, label, _ in decoded:
+        if any(word in label.lower() for word in plant_words):
+            return True
 
-    return True, confidence
+    return False
 
 
 # -----------------------------
-# IMAGE PROCESSING
+# PLANT MODEL PREDICTION
 # -----------------------------
 def model_predict(img_path):
     img = image.load_img(img_path, target_size=(64, 64))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = x / 255.0
-    return model.predict(x)
+    return plant_model.predict(x)
 
 
 # -----------------------------
@@ -116,45 +128,37 @@ def uploaded_file(filename):
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        if 'file' not in request.files:
-            return "No file uploaded"
-
         file = request.files['file']
-
-        if file.filename == '':
-            return "No selected file"
-
         filename = secure_filename(file.filename)
+
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        preds = model_predict(file_path)
-
-        # 🔥 STEP 2: Check if plant-like
-        is_leaf, confidence = is_plant_like(preds)
-
-        if not is_leaf:
+        # 🔥 STEP 1: FILTER NON-LEAF IMAGES
+        if not is_leaf_image(file_path):
             return render_template(
                 "result.html",
                 prediction="Unknown (Not a Plant Leaf)",
-                confidence=round(confidence, 2),
+                confidence=0,
                 filename=filename,
-                info="❌ Please upload a clear plant leaf image."
+                info="❌ This is not a plant leaf image. Please upload a leaf."
             )
 
-        # 🔥 STEP 3: Normal prediction
-        pred_index = np.argmax(preds[0])
-        predicted_class = classes[pred_index]
+        # 🔥 STEP 2: PLANT DISEASE PREDICTION
+        preds = model_predict(file_path)
 
+        pred_index = np.argmax(preds[0])
+        confidence = float(np.max(preds[0]) * 100)
+
+        predicted_class = classes[pred_index]
         final_prediction = friendly_names.get(predicted_class, predicted_class)
-        info = disease_info.get(final_prediction, "No info available")
 
         return render_template(
             "result.html",
             prediction=final_prediction,
             confidence=round(confidence, 2),
             filename=filename,
-            info=info
+            info=disease_info.get(final_prediction, "")
         )
 
     except Exception as e:
