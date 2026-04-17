@@ -2,33 +2,55 @@
 <html>
 <head>
     <title>Result 🌿</title>
+
     <style>
         body {
-            text-align: center;
             font-family: Arial;
-            background: linear-gradient(to right, #a8e063, #56ab2f);
+            background: linear-gradient(to right, #56ab2f, #a8e063);
+            text-align: center;
             color: white;
         }
+
         .card {
             background: white;
             color: black;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
-            width: 300px;
+            width: 350px;
             margin: auto;
             margin-top: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+
         img {
-            width: 200px;
+            width: 220px;
             border-radius: 10px;
+            margin-bottom: 15px;
         }
-        a {
-            text-decoration: none;
-            color: green;
+
+        .confidence {
+            margin-top: 10px;
             font-weight: bold;
+            color: green;
+        }
+
+        .info {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            background: green;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
         }
     </style>
 </head>
+
 <body>
 
 <div class="card">
@@ -38,8 +60,15 @@
 
     <h3>{{ prediction }}</h3>
 
-    <br>
-    <a href="/">⬅ Try Another Image</a>
+    <div class="confidence">
+        Confidence: {{ confidence }}%
+    </div>
+
+    <div class="info">
+        {{ info }}
+    </div>
+
+    <a href="/">Try Another Image</a>
 </div>
 
 </body>
