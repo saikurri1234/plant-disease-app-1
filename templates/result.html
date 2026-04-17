@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result 🌿</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial;
+            background: linear-gradient(to right, #a8e063, #56ab2f);
+            color: white;
+        }
+        .card {
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 15px;
+            width: 300px;
+            margin: auto;
+            margin-top: 50px;
+        }
+        img {
+            width: 200px;
+            border-radius: 10px;
+        }
+        a {
+            text-decoration: none;
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🌿 Prediction Result</h2>
+
+    <img src="/uploads/{{ filename }}">
+
+    <h3>{{ prediction }}</h3>
+
+    <br>
+    <a href="/">⬅ Try Another Image</a>
+</div>
+
+</body>
+</html>
