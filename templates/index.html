@@ -5,34 +5,52 @@
 
     <style>
         body {
-            text-align: center;
-            font-family: Arial;
-            background: linear-gradient(to right, #56ab2f, #a8e063);
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1d976c, #93f9b9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             color: white;
         }
 
         .card {
             background: white;
             color: black;
-            padding: 30px;
-            border-radius: 15px;
-            width: 350px;
-            margin: auto;
-            margin-top: 100px;
+            padding: 40px;
+            border-radius: 20px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            margin: 20px 0;
         }
 
         button {
-            padding: 10px 20px;
-            background: green;
-            color: white;
+            padding: 12px 25px;
+            background: #1d976c;
             border: none;
-            border-radius: 5px;
+            color: white;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #148f5c;
         }
 
         #loading {
             display: none;
-            margin-top: 20px;
+            margin-top: 15px;
+            color: #1d976c;
             font-weight: bold;
         }
     </style>
@@ -52,12 +70,12 @@
 
     <form action="/predict" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
         <input type="file" name="file" required>
-        <br><br>
-        <button type="submit">Predict</button>
+        <br>
+        <button type="submit">🔍 Predict</button>
     </form>
 
     <div id="loading">
-        ⏳ Analyzing image... Please wait
+        ⏳ Analyzing image...
     </div>
 </div>
 

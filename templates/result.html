@@ -5,25 +5,28 @@
 
     <style>
         body {
-            font-family: Arial;
-            background: linear-gradient(to right, #56ab2f, #a8e063);
-            text-align: center;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1d976c, #93f9b9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             color: white;
         }
 
         .card {
             background: white;
             color: black;
-            padding: 25px;
-            border-radius: 15px;
-            width: 350px;
-            margin: auto;
-            margin-top: 50px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 30px;
+            border-radius: 20px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
         img {
-            width: 220px;
+            width: 250px;
             border-radius: 10px;
             margin-bottom: 15px;
         }
@@ -37,18 +40,24 @@
         .info {
             margin-top: 15px;
             font-size: 14px;
+            color: #444;
         }
 
         a {
             display: inline-block;
-            margin-top: 15px;
+            margin-top: 20px;
             text-decoration: none;
-            background: green;
+            background: #1d976c;
             color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        a:hover {
+            background: #148f5c;
         }
     </style>
+
 </head>
 
 <body>
@@ -68,7 +77,7 @@
         {{ info }}
     </div>
 
-    <a href="/">Try Another Image</a>
+    <a href="/">🔄 Try Another Image</a>
 </div>
 
 </body>
