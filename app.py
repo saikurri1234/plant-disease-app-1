@@ -112,29 +112,28 @@ def predict():
         preds = model_predict(file_path)
 
         pred_index = np.argmax(preds[0])
-        confidence = round(np.max(preds[0]) * 100, 2)
-
         predicted_class = classes[pred_index]
 
-        # 🔥 Confidence threshold fix
-        if confidence < 70:
+        # 🔥 SMART CHECK (FIX)
+        unknown, confidence = is_unknown(preds)
+
+        if unknown:
             final_prediction = "Unknown"
+            info = "❌ This does not look like a plant leaf. Please upload a clear leaf image."
         else:
             final_prediction = friendly_names.get(predicted_class, predicted_class)
-
-        info = disease_info.get(final_prediction, "No info available")
+            info = disease_info.get(final_prediction, "No info available")
 
         return render_template(
             "result.html",
             prediction=final_prediction,
-            confidence=confidence,
+            confidence=round(confidence, 2),
             filename=filename,
             info=info
         )
 
     except Exception as e:
         return f"Error: {str(e)}"
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
