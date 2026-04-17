@@ -7,7 +7,6 @@ from tensorflow.keras.preprocessing import image
 
 app = Flask(__name__)
 
-# Upload folder
 UPLOAD_FOLDER = "uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -35,7 +34,6 @@ classes = [
     'Tomato_healthy'
 ]
 
-# Friendly names
 friendly_names = {
     'Pepper__bell___Bacterial_spot': 'Pepper Bacterial Spot',
     'Pepper__bell___healthy': 'Healthy Pepper Leaf',
@@ -54,7 +52,6 @@ friendly_names = {
     'Tomato_healthy': 'Healthy Tomato Leaf'
 }
 
-# Disease info
 disease_info = {
     'Pepper Bacterial Spot': "Caused by bacteria. Avoid overhead watering.",
     'Healthy Pepper Leaf': "Your plant is healthy 🌿",
@@ -70,26 +67,31 @@ disease_info = {
     'Tomato Target Spot': "Apply fungicide.",
     'Tomato Yellow Leaf Curl Virus': "Remove infected plants.",
     'Tomato Mosaic Virus': "Avoid contamination.",
-    'Healthy Tomato Leaf': "Your plant is healthy 🌿",
-    'Unknown': "❌ Please upload a clear plant leaf image 🌿"
+    'Healthy Tomato Leaf': "Your plant is healthy 🌿"
 }
 
-# 🔥 FIXED FUNCTION (THIS WAS MISSING)
-def is_unknown(preds):
-    top1 = np.max(preds[0])
-    top2 = np.sort(preds[0])[-2]
+# -----------------------------
+# 🔥 STEP 1: FEATURE CHECK (plant-like detection)
+# -----------------------------
+def is_plant_like(preds):
+    probs = preds[0]
+
+    top1 = np.max(probs)
+    top2 = np.sort(probs)[-2]
 
     confidence = top1 * 100
     margin = top1 - top2
 
-    # Reject only if VERY uncertain
-    if confidence < 40 and margin < 0.10:
-        return True, confidence
+    # Strong rule for rejection
+    if confidence < 50 and margin < 0.15:
+        return False, confidence
 
-    return False, confidence
+    return True, confidence
 
 
-# Prediction function
+# -----------------------------
+# IMAGE PROCESSING
+# -----------------------------
 def model_predict(img_path):
     img = image.load_img(img_path, target_size=(64, 64))
     x = image.img_to_array(img)
@@ -98,6 +100,9 @@ def model_predict(img_path):
     return model.predict(x)
 
 
+# -----------------------------
+# ROUTES
+# -----------------------------
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -125,18 +130,24 @@ def predict():
 
         preds = model_predict(file_path)
 
+        # 🔥 STEP 2: Check if plant-like
+        is_leaf, confidence = is_plant_like(preds)
+
+        if not is_leaf:
+            return render_template(
+                "result.html",
+                prediction="Unknown (Not a Plant Leaf)",
+                confidence=round(confidence, 2),
+                filename=filename,
+                info="❌ Please upload a clear plant leaf image."
+            )
+
+        # 🔥 STEP 3: Normal prediction
         pred_index = np.argmax(preds[0])
         predicted_class = classes[pred_index]
 
-        # Smart detection
-        unknown, confidence = is_unknown(preds)
-
-        if unknown:
-            final_prediction = "Unknown"
-            info = "❌ This does not look like a plant leaf. Please upload a clear leaf image."
-        else:
-            final_prediction = friendly_names.get(predicted_class, predicted_class)
-            info = disease_info.get(final_prediction, "No info available")
+        final_prediction = friendly_names.get(predicted_class, predicted_class)
+        info = disease_info.get(final_prediction, "No info available")
 
         return render_template(
             "result.html",
