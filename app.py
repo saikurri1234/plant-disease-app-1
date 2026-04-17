@@ -7,7 +7,7 @@ from tensorflow.keras.preprocessing import image
 
 app = Flask(__name__)
 
-# Upload folder setup
+# Upload folder
 UPLOAD_FOLDER = "uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 model = tf.keras.models.load_model("PlantDNet.h5", compile=False)
 print("Model loaded")
 
-# Classes (✅ FIX ADDED HERE)
+# ✅ Class labels (IMPORTANT)
 classes = [
     'Pepper__bell___Bacterial_spot',
     'Pepper__bell___healthy',
@@ -35,23 +35,43 @@ classes = [
     'Tomato_healthy'
 ]
 
-# Disease info (GLOBAL for clean code)
+# Friendly names
+friendly_names = {
+    'Pepper__bell___Bacterial_spot': 'Pepper Bacterial Spot',
+    'Pepper__bell___healthy': 'Healthy Pepper Leaf',
+    'Potato___Early_blight': 'Potato Early Blight',
+    'Potato___Late_blight': 'Potato Late Blight',
+    'Potato___healthy': 'Healthy Potato Leaf',
+    'Tomato_Bacterial_spot': 'Tomato Bacterial Spot',
+    'Tomato_Early_blight': 'Tomato Early Blight',
+    'Tomato_Late_blight': 'Tomato Late Blight',
+    'Tomato_Leaf_Mold': 'Tomato Leaf Mold',
+    'Tomato_Septoria_leaf_spot': 'Tomato Septoria Leaf Spot',
+    'Tomato_Spider_mites_Two_spotted_spider_mite': 'Tomato Spider Mites',
+    'Tomato__Target_Spot': 'Tomato Target Spot',
+    'Tomato__Tomato_YellowLeaf__Curl_Virus': 'Tomato Yellow Leaf Curl Virus',
+    'Tomato__Tomato_mosaic_virus': 'Tomato Mosaic Virus',
+    'Tomato_healthy': 'Healthy Tomato Leaf'
+}
+
+# Disease info
 disease_info = {
-    'Pepper__bell___Bacterial_spot': "Caused by bacteria. Remove infected leaves and avoid overhead watering.",
-    'Pepper__bell___healthy': "Your plant is healthy 🌿",
-    'Potato___Early_blight': "Fungal disease. Use fungicide and remove affected leaves.",
-    'Potato___Late_blight': "Serious fungal disease. Remove plant and apply fungicide immediately.",
-    'Potato___healthy': "Your plant is healthy 🌿",
-    'Tomato_Bacterial_spot': "Avoid wet leaves. Use copper-based sprays.",
-    'Tomato_Early_blight': "Remove infected leaves and use fungicide.",
-    'Tomato_Late_blight': "Highly destructive. Remove plant and treat nearby plants.",
-    'Tomato_Leaf_Mold': "Improve air circulation and reduce humidity.",
-    'Tomato_Septoria_leaf_spot': "Remove infected leaves and avoid splashing water.",
-    'Tomato_Spider_mites_Two_spotted_spider_mite': "Use neem oil or insecticidal soap.",
-    'Tomato__Target_Spot': "Apply fungicide and remove affected leaves.",
-    'Tomato__Tomato_YellowLeaf__Curl_Virus': "Spread by whiteflies. Remove infected plants.",
-    'Tomato__Tomato_mosaic_virus': "Avoid handling plants after tobacco use. Remove infected plants.",
-    'Tomato_healthy': "Your plant is healthy 🌿"
+    'Pepper Bacterial Spot': "Caused by bacteria. Avoid overhead watering.",
+    'Healthy Pepper Leaf': "Your plant is healthy 🌿",
+    'Potato Early Blight': "Fungal disease. Use fungicide.",
+    'Potato Late Blight': "Serious disease. Act quickly.",
+    'Healthy Potato Leaf': "Your plant is healthy 🌿",
+    'Tomato Bacterial Spot': "Use copper sprays.",
+    'Tomato Early Blight': "Remove infected leaves.",
+    'Tomato Late Blight': "Highly destructive disease.",
+    'Tomato Leaf Mold': "Reduce humidity.",
+    'Tomato Septoria Leaf Spot': "Avoid splashing water.",
+    'Tomato Spider Mites': "Use neem oil.",
+    'Tomato Target Spot': "Apply fungicide.",
+    'Tomato Yellow Leaf Curl Virus': "Remove infected plants.",
+    'Tomato Mosaic Virus': "Avoid contamination.",
+    'Healthy Tomato Leaf': "Your plant is healthy 🌿",
+    'Unknown': "❌ Please upload a clear plant leaf image 🌿"
 }
 
 # Prediction function
@@ -64,19 +84,16 @@ def model_predict(img_path):
     return preds
 
 
-# Home page
 @app.route('/')
 def index():
     return render_template("index.html")
 
 
-# Serve uploaded images
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
-# Prediction route
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -90,31 +107,35 @@ def predict():
 
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        # Save file
         file.save(file_path)
 
-        # Predict
         preds = model_predict(file_path)
 
-        predicted_class = classes[np.argmax(preds[0])]
-
-        # Confidence score
+        pred_index = np.argmax(preds[0])
         confidence = round(np.max(preds[0]) * 100, 2)
+
+        predicted_class = classes[pred_index]
+
+        # 🔥 Confidence threshold fix
+        if confidence < 70:
+            final_prediction = "Unknown"
+        else:
+            final_prediction = friendly_names.get(predicted_class, predicted_class)
+
+        info = disease_info.get(final_prediction, "No info available")
 
         return render_template(
             "result.html",
-            prediction=predicted_class,
+            prediction=final_prediction,
             confidence=confidence,
             filename=filename,
-            info=disease_info.get(predicted_class, "No info available")
+            info=info
         )
 
     except Exception as e:
         return f"Error: {str(e)}"
 
 
-# Run app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

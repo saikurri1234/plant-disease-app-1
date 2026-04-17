@@ -1,73 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Result 🌿</title>
+    <title>AgriAI Result 🌿</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1d976c, #93f9b9);
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(135deg, #0f2027, #2c5364);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            color: white;
         }
 
         .card {
-            background: white;
-            color: black;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            color: white;
             padding: 30px;
             border-radius: 20px;
-            width: 400px;
+            width: 420px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(20px);}
+            to {opacity: 1; transform: translateY(0);}
         }
 
         img {
             width: 250px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            margin: 10px 0;
         }
 
         .confidence {
             margin-top: 10px;
             font-weight: bold;
-            color: green;
+            color: #00e676;
         }
 
         .info {
             margin-top: 15px;
             font-size: 14px;
-            color: #444;
+            color: #ddd;
+            padding: 10px;
         }
 
         a {
             display: inline-block;
             margin-top: 20px;
             text-decoration: none;
-            background: #1d976c;
+            background: #00c853;
             color: white;
             padding: 10px 20px;
             border-radius: 8px;
+            transition: 0.3s;
         }
 
         a:hover {
-            background: #148f5c;
+            background: #00b34a;
+            transform: scale(1.05);
+        }
+
+        /* Status styles */
+        .healthy {
+            color: #00e676;
+            font-weight: bold;
+        }
+
+        .disease {
+            color: #ff5252;
+            font-weight: bold;
+        }
+
+        .unknown {
+            color: orange;
+            font-weight: bold;
         }
     </style>
-
 </head>
 
 <body>
 
 <div class="card">
+
     <h2>🌿 Prediction Result</h2>
 
     <img src="/uploads/{{ filename }}">
 
-    <h3>{{ prediction }}</h3>
+    <!-- 🎯 Smart condition handling -->
+    {% if prediction == "Unknown" %}
+        <h3 class="unknown">⚠️ Not a Plant Leaf</h3>
+
+    {% elif "Healthy" in prediction %}
+        <h3 class="healthy">✅ {{ prediction }}</h3>
+
+    {% else %}
+        <h3 class="disease">⚠️ {{ prediction }}</h3>
+    {% endif %}
 
     <div class="confidence">
         Confidence: {{ confidence }}%
@@ -78,6 +127,7 @@
     </div>
 
     <a href="/">🔄 Try Another Image</a>
+
 </div>
 
 </body>
